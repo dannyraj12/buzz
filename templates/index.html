@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Buzzheavier Downloader</title>
+  <script defer src="/static/script.js"></script>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 1rem; }
+    button { padding: 0.6rem 1rem; margin: 0.5rem; font-size: 1rem; }
+    pre { background: #111; color: #0f0; padding: 1rem; overflow-x: auto; height: 300px; }
+  </style>
+</head>
+<body>
+  <h1>⚡ Buzzheavier Downloader</h1>
+  <p>Status: <span id="status">Loading...</span></p>
+  <button onclick="start()">▶️ Start</button>
+  <button onclick="stop()">⏹ Stop</button>
+  <h2>📜 Logs</h2>
+  <pre id="logs">Fetching logs...</pre>
+</body>
+</html>
