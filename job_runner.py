@@ -2,7 +2,7 @@ import asyncio
 from playwright.async_api import async_playwright
 import random
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 import time
 from typing import Optional, Dict, Any
@@ -74,8 +74,8 @@ async def fetch_links_and_proxies():
 
     return buzz_links, proxies
 
-async def download_with_retry(playwright, url: str, proxy: Optional[str], logs_col, max_retries: int = RETRY_ATTEMPTS):
-    """Download with retry logic"""
+async def download_with_retry(playwright, url: str, proxy: Optional[str], logs_col, max_retries: int = 1):
+    """Download with retry logic for a single attempt"""
     for attempt in range(max_retries):
         try:
             result = await run_single_download(playwright, url, proxy, logs_col, attempt + 1)
@@ -192,8 +192,21 @@ async def run_single_download(playwright, url: str, proxy: Optional[str], logs_c
             except Exception as e:
                 logger.error(f"Failed to log entry: {e}")
 
+def clear_db_after_completion(logs_col, stats_col):
+    if logs_col:
+        try:
+            logs_col.delete_many({})
+            logger.info("Logs cleared from database after job completion")
+        except Exception as e:
+            logger.error(f"Failed to clear logs: {e}")
+    if stats_col:
+        try:
+            stats_col.delete_many({})
+            logger.info("Stats cleared from database after job completion")
+        except Exception as e:
+            logger.error(f"Failed to clear stats: {e}")
+
 async def run_job(logs_col, stats_col):
-    """Main job runner"""
     global _running, _current_stats
     
     logger.info("Starting download job...")
@@ -205,7 +218,6 @@ async def run_job(logs_col, stats_col):
         current_link=""
     )
     
-    # Fetch links and proxies
     buzz_links, proxies = await fetch_links_and_proxies()
     
     if not buzz_links:
@@ -214,6 +226,8 @@ async def run_job(logs_col, stats_col):
         return
     
     logger.info(f"Starting processing of {len(buzz_links)} links with {len(proxies)} proxies")
+    
+    working_proxies = proxies.copy() if proxies else []
     
     async with async_playwright() as playwright:
         for i, link in enumerate(buzz_links):
@@ -224,31 +238,41 @@ async def run_job(logs_col, stats_col):
             update_stats(current_link=link)
             logger.info(f"Processing link {i+1}/{len(buzz_links)}: {link}")
             
-            # Select random proxy if available
-            proxy = random.choice(proxies) if proxies else None
+            available_proxies = working_proxies.copy() if working_proxies else []
+            result = None
+            retry_attempts = 0
             
-            # Download with retry
-            result = await download_with_retry(playwright, link, proxy, logs_col)
+            while retry_attempts < RETRY_ATTEMPTS:
+                proxy = random.choice(available_proxies) if available_proxies else None
+                result = await download_with_retry(playwright, link, proxy, logs_col, max_retries=1)
+                if result["success"]:
+                    break
+                else:
+                    error_msg = result.get("error", "").lower()
+                    if proxy and ("timeout" in error_msg or "connection" in error_msg):
+                        if proxy in available_proxies:
+                            available_proxies.remove(proxy)
+                            logger.info(f"Removed dead proxy: {proxy}")
+                    retry_attempts += 1
             
-            # Update statistics
             _current_stats["total_processed"] += 1
-            if result["success"]:
+            if result and result.get("success"):
                 _current_stats["successful_downloads"] += 1
             else:
                 _current_stats["failed_downloads"] += 1
             
             update_stats()
             
-            # Small delay between downloads
             if _running and i < len(buzz_links) - 1:
                 await asyncio.sleep(2)
     
     logger.info("Download job completed")
     update_stats(current_link="")
     _running = False
+    
+    clear_db_after_completion(logs_col, stats_col)
 
 def run_downloader(logs_col, stats_col):
-    """Entry point for running the downloader"""
     global _running
     
     if _running:
