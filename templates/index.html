@@ -1,21 +1,300 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Buzzheavier Downloader</title>
-  <script defer src="/static/script.js"></script>
-  <style>
-    body { font-family: sans-serif; max-width: 600px; margin: auto; padding: 1rem; }
-    button { padding: 0.6rem 1rem; margin: 0.5rem; font-size: 1rem; }
-    pre { background: #111; color: #0f0; padding: 1rem; overflow-x: auto; height: 300px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Buzzheavier Auto Downloader</title>
+    <script defer src="/static/script.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .status-card {
+            text-align: center;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-running {
+            background: #4CAF50;
+        }
+
+        .status-idle {
+            background: #9E9E9E;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-start {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .btn-stop {
+            background: linear-gradient(45deg, #f44336, #da190b);
+            color: white;
+        }
+
+        .btn-clear {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .logs-section {
+            grid-column: 1 / -1;
+        }
+
+        .logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .logs-container {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.4;
+        }
+
+        .logs-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .logs-container::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        .logs-container::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .current-link {
+            background: #e3f2fd;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>⚡ Buzzheavier Downloader</h1>
-  <p>Status: <span id="status">Loading...</span></p>
-  <button onclick="start()">▶️ Start</button>
-  <button onclick="stop()">⏹ Stop</button>
-  <h2>📜 Logs</h2>
-  <pre id="logs">Fetching logs...</pre>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Buzzheavier Auto Downloader</h1>
+            <p>Automated file download system to prevent expiration</p>
+        </div>
+
+        <div class="dashboard">
+            <div class="card status-card">
+                <h2>System Status</h2>
+                <div style="margin: 1rem 0;">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="status">Loading...</span>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn-start" onclick="startDownloader()" id="startBtn">
+                        ▶️ Start Downloads
+                    </button>
+                    <button class="btn-stop" onclick="stopDownloader()" id="stopBtn">
+                        ⏹️ Stop Downloads
+                    </button>
+                </div>
+
+                <div id="currentLink" class="current-link" style="display: none;">
+                    <strong>Current:</strong> <span id="currentLinkText"></span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalProcessed">0</div>
+                        <div class="stat-label">Total Processed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="successCount">0</div>
+                        <div class="stat-label">Successful</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="failCount">0</div>
+                        <div class="stat-label">Failed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="successRate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card logs-section">
+                <div class="logs-header">
+                    <h2>📜 Activity Logs</h2>
+                    <button class="btn-clear" onclick="clearLogs()" id="clearBtn">
+                        🗑️ Clear Logs
+                    </button>
+                </div>
+                <div class="logs-container" id="logs">
+                    <div class="loading"></div> Fetching logs...
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
