@@ -1,0 +1,15 @@
+[build]
+  command = "echo 'No build step required for static files'"
+  publish = "static"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production]
+  command = "echo 'Production build - no npm required'"
